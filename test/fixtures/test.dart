@@ -3,7 +3,7 @@ class TestClass1 {
 
   TestClass1(this.value);
 
-  int call() => 0;
+  int call(int v) => 0 + v;
 }
 
 class TestClass2<T> {
@@ -11,7 +11,7 @@ class TestClass2<T> {
 
   TestClass2(this.value);
 
-  int call() => 0;
+  Future<int> call({required int v}) async => 0 + v;
 }
 
 class TestClass {
@@ -20,5 +20,6 @@ class TestClass {
 
   TestClass(this.test1, this.test2);
 
-  int call() => test1.call() + test2.call();
+  Future<int> call({required int v}) async =>
+      test1.call(v) + (await test2.call(v: v)) + v;
 }

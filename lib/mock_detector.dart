@@ -25,6 +25,29 @@ class MockDetector {
           .map((e) => _detectAnnotation(e))
           .whereNotNull(),
     );
+    nodes.addAll(
+      mainFn.childEntities
+          .whereType<FunctionExpression>()
+          .first
+          .body
+          .childEntities
+          .whereType<Block>()
+          .first
+          .statements
+          .whereType<ExpressionStatement>()
+          .map((e) => e.expression)
+          .expand((e) {
+        final label = (e.childEntities.first as SimpleIdentifier).name;
+        final node = e.childEntities.last as ArgumentList;
+        switch (label) {
+          case 'setUp':
+            return _detectStatements(node.arguments.first);
+          case 'test':
+            return _detectStatements(node.arguments.last);
+        }
+        return [];
+      }),
+    );
     return nodes;
   }
 
@@ -75,6 +98,35 @@ class MockDetector {
     }).toList();
     return MigrationAnnotationNode(start.lineNumber, end.lineNumber, nodes);
   }
+
+  List<MigrationNode> _detectStatements(Expression expression) {
+    final body = expression.childEntities.last as BlockFunctionBody;
+    return body.block.statements
+        .whereType<ExpressionStatement>()
+        .map((e) => e.expression)
+        .whereType<MethodInvocation>()
+        .map((e) {
+          final method =
+              e.childEntities.whereType<MethodInvocation>().firstOrNull;
+          final start = result.lineInfo.getLocation(e.beginToken.offset);
+          final end = result.lineInfo.getLocation(e.endToken.offset);
+          switch (method?.methodName.name) {
+            case 'when':
+              return MigrationWhenNode(
+                start.lineNumber,
+                end.lineNumber,
+                method.toString(),
+                e.function.toString(),
+                e.argumentList.toString(),
+              );
+            case 'verify':
+              break;
+          }
+          return null;
+        })
+        .whereNotNull()
+        .toList();
+  }
 }
 
 abstract class MigrationNode {
@@ -108,4 +160,17 @@ class MigrationMockNode {
   final String? typeName;
 
   MigrationMockNode(this.mockName, this.typeName);
+}
+
+class MigrationWhenNode implements MigrationNode {
+  @override
+  final int start;
+  @override
+  final int end;
+
+  final String method;
+  final String then;
+  final String args;
+
+  MigrationWhenNode(this.start, this.end, this.method, this.then, this.args);
 }

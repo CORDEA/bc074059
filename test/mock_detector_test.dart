@@ -46,4 +46,40 @@ void main() {
     expect(node.nodes[1].mockName, 'MockTestClass2');
     expect(node.nodes[1].typeName, '<String>');
   });
+
+  test('with statements', () async {
+    // given
+    final parsed = parseFile(
+      path: path.absolute('test', 'fixtures', 'test_3.dart'),
+      featureSet: FeatureSet.latestLanguageVersion(),
+    );
+    final detector = MockDetector(parsed);
+
+    // when
+    final nodes = detector.detect();
+
+    // then
+    expect(nodes, hasLength(7));
+
+    final node1 = nodes[4] as MigrationWhenNode;
+    expect(node1.start, 21);
+    expect(node1.end, 21);
+    expect(node1.method, 'when(testClass1.call(0))');
+    expect(node1.then, 'thenReturn');
+    expect(node1.args, '(3)');
+
+    final node2 = nodes[5] as MigrationWhenNode;
+    expect(node2.start, 25);
+    expect(node2.end, 25);
+    expect(node2.method, 'when(testClass1.call(2))');
+    expect(node2.then, 'thenReturn');
+    expect(node2.args, '(2)');
+
+    final node3 = nodes[6] as MigrationWhenNode;
+    expect(node3.start, 26);
+    expect(node3.end, 26);
+    expect(node3.method, 'when(testClass2.call(v: 2))');
+    expect(node3.then, 'thenAnswer');
+    expect(node3.args, '((_) => Future.value(0))');
+  });
 }
