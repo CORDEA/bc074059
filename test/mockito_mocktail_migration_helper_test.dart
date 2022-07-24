@@ -1,8 +1,9 @@
 import 'package:mockito_mocktail_migration_helper/mockito_mocktail_migration_helper.dart';
+import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
 void main() {
-  test('calculate', () {
-    expect(calculate(), 42);
+  test('migrate', () {
+    migrate([path.absolute('test', 'fixtures', 'test_1.dart')]);
   });
 }
