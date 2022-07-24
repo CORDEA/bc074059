@@ -113,8 +113,9 @@ class MockDetector {
           final end = result.lineInfo.getLocation(e.endToken.offset);
           switch (method?.methodName.name) {
             case 'when':
+            case 'verify':
               final args = _detectArguments(method);
-              return MigrationWhenNode(
+              return MigrationStubNode(
                 start.lineNumber,
                 end.lineNumber,
                 method.toString(),
@@ -122,8 +123,6 @@ class MockDetector {
                 e.argumentList.toString(),
                 args,
               );
-            case 'verify':
-              break;
           }
           return null;
         })
@@ -188,7 +187,7 @@ class MockDetector {
           return MigrationAnyNode(
             start,
             offset,
-            true,
+            false,
             name.value,
             args.first.toString(),
           );
@@ -231,7 +230,7 @@ class MigrationMockNode {
   MigrationMockNode(this.mockName, this.typeName);
 }
 
-class MigrationWhenNode implements MigrationNode {
+class MigrationStubNode implements MigrationNode {
   @override
   final int start;
   @override
@@ -242,7 +241,7 @@ class MigrationWhenNode implements MigrationNode {
   final String args;
   final List<MigrationArgumentNode> nodes;
 
-  MigrationWhenNode(
+  MigrationStubNode(
     this.start,
     this.end,
     this.method,

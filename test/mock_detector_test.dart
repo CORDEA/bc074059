@@ -61,21 +61,21 @@ void main() {
     // then
     expect(nodes, hasLength(7));
 
-    final node1 = nodes[4] as MigrationWhenNode;
+    final node1 = nodes[4] as MigrationStubNode;
     expect(node1.start, 21);
     expect(node1.end, 21);
     expect(node1.method, 'when(testClass1.call(0))');
     expect(node1.then, 'thenReturn');
     expect(node1.args, '(3)');
 
-    final node2 = nodes[5] as MigrationWhenNode;
+    final node2 = nodes[5] as MigrationStubNode;
     expect(node2.start, 25);
     expect(node2.end, 25);
     expect(node2.method, 'when(testClass1.call(2))');
     expect(node2.then, 'thenReturn');
     expect(node2.args, '(2)');
 
-    final node3 = nodes[6] as MigrationWhenNode;
+    final node3 = nodes[6] as MigrationStubNode;
     expect(node3.start, 26);
     expect(node3.end, 26);
     expect(node3.method, 'when(testClass2.call(v: 2))');
@@ -97,7 +97,7 @@ void main() {
     // then
     expect(nodes, hasLength(8));
 
-    nodes[4].testNode<MigrationWhenNode>((n) {
+    nodes[4].testNode<MigrationStubNode>((n) {
       expect(n.start, 17);
       expect(n.end, 17);
       expect(n.method, 'when(testClass1.call(0))');
@@ -105,7 +105,7 @@ void main() {
       expect(n.args, '(2)');
       expect(n.nodes, isEmpty);
     });
-    nodes[5].testNode<MigrationWhenNode>((n) {
+    nodes[5].testNode<MigrationStubNode>((n) {
       expect(n.start, 18);
       expect(n.end, 18);
       expect(
@@ -130,7 +130,7 @@ void main() {
         expect(n.name, 'flag');
       });
     });
-    nodes[6].testNode<MigrationWhenNode>((n) {
+    nodes[6].testNode<MigrationStubNode>((n) {
       expect(n.start, 19);
       expect(n.end, 19);
       expect(
@@ -141,7 +141,7 @@ void main() {
       expect(n.args, "((_) => Future.value(''))");
       expect(n.nodes, isEmpty);
     });
-    nodes[7].testNode<MigrationWhenNode>((n) {
+    nodes[7].testNode<MigrationStubNode>((n) {
       expect(n.start, 20);
       expect(n.end, 25);
       expect(
