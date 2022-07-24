@@ -1,5 +1,6 @@
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/source/line_info.dart';
 import 'package:collection/collection.dart';
 
 class MockDetector {
@@ -112,12 +113,14 @@ class MockDetector {
           final end = result.lineInfo.getLocation(e.endToken.offset);
           switch (method?.methodName.name) {
             case 'when':
+              final args = _detectArguments(method);
               return MigrationWhenNode(
                 start.lineNumber,
                 end.lineNumber,
                 method.toString(),
                 e.function.toString(),
                 e.argumentList.toString(),
+                args,
               );
             case 'verify':
               break;
@@ -126,6 +129,72 @@ class MockDetector {
         })
         .whereNotNull()
         .toList();
+  }
+
+  List<MigrationArgumentNode> _detectArguments(MethodInvocation? method) {
+    if (method == null) {
+      return [];
+    }
+    final start = result.lineInfo.getLocation(method.beginToken.offset);
+    final arg =
+        method.argumentList.arguments.whereType<MethodInvocation>().first;
+    return arg.argumentList.arguments
+        .map((e) => _detectArgument(e, start))
+        .whereType<MigrationArgumentNode>()
+        .toList();
+  }
+
+  MigrationArgumentNode? _detectArgument(
+    Expression exp,
+    CharacterLocation base,
+  ) {
+    final current = result.lineInfo.getLocation(exp.beginToken.offset);
+    final start = current.lineNumber - base.lineNumber;
+    final offset = current.columnNumber - base.columnNumber;
+    if (exp is SimpleIdentifier) {
+      switch (exp.name) {
+        case 'any':
+          return MigrationAnyNode(start, offset, false, null, null);
+        case 'captureAny':
+          return MigrationAnyNode(start, offset, true, null, null);
+      }
+    }
+    if (exp is NamedExpression) {
+      final method = exp.expression;
+      if (method is! MethodInvocation) {
+        return null;
+      }
+      final args = method.argumentList.arguments;
+      switch (method.methodName.name) {
+        case 'anyNamed':
+          final name = args.first as SimpleStringLiteral;
+          return MigrationAnyNode(start, offset, false, name.value, null);
+        case 'captureAnyNamed':
+          final name = args.first as SimpleStringLiteral;
+          return MigrationAnyNode(start, offset, true, name.value, null);
+        case 'captureThat':
+          final name =
+              (args.last as NamedExpression).expression as SimpleStringLiteral;
+          return MigrationAnyNode(
+            start,
+            offset,
+            true,
+            name.value,
+            args.first.toString(),
+          );
+        case 'argThat':
+          final name =
+              (args.last as NamedExpression).expression as SimpleStringLiteral;
+          return MigrationAnyNode(
+            start,
+            offset,
+            true,
+            name.value,
+            args.first.toString(),
+          );
+      }
+    }
+    return null;
   }
 }
 
@@ -171,6 +240,49 @@ class MigrationWhenNode implements MigrationNode {
   final String method;
   final String then;
   final String args;
+  final List<MigrationArgumentNode> nodes;
 
-  MigrationWhenNode(this.start, this.end, this.method, this.then, this.args);
+  MigrationWhenNode(
+    this.start,
+    this.end,
+    this.method,
+    this.then,
+    this.args,
+    this.nodes,
+  );
+}
+
+abstract class MigrationArgumentNode {
+  int get index;
+
+  int get offset;
+}
+
+class MigrationAnyNode implements MigrationArgumentNode {
+  @override
+  final int index;
+  @override
+  final int offset;
+  final bool captured;
+  final String? name;
+  final String? matcher;
+
+  MigrationAnyNode(
+    this.index,
+    this.offset,
+    this.captured,
+    this.name,
+    this.matcher,
+  );
+}
+
+class MigrationArgThatNode implements MigrationArgumentNode {
+  @override
+  final int index;
+  @override
+  final int offset;
+  final String? name;
+  final String? matcher;
+
+  MigrationArgThatNode(this.index, this.offset, this.name, this.matcher);
 }

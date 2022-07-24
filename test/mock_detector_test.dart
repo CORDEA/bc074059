@@ -82,4 +82,78 @@ void main() {
     expect(node3.then, 'thenAnswer');
     expect(node3.args, '((_) => Future.value(0))');
   });
+
+  test('with args', () async {
+    // given
+    final parsed = parseFile(
+      path: path.absolute('test', 'fixtures', 'test_4.dart'),
+      featureSet: FeatureSet.latestLanguageVersion(),
+    );
+    final detector = MockDetector(parsed);
+
+    // when
+    final nodes = detector.detect();
+
+    // then
+    expect(nodes, hasLength(8));
+
+    nodes[4].testNode<MigrationWhenNode>((n) {
+      expect(n.start, 17);
+      expect(n.end, 17);
+      expect(n.method, 'when(testClass1.call(0))');
+      expect(n.then, 'thenReturn');
+      expect(n.args, '(2)');
+      expect(n.nodes, isEmpty);
+    });
+    nodes[5].testNode<MigrationWhenNode>((n) {
+      expect(n.start, 18);
+      expect(n.end, 18);
+      expect(
+        n.method,
+        "when(testClass1.call2(any, flag: anyNamed('flag')))",
+      );
+      expect(n.then, 'thenReturn');
+      expect(n.args, '(2)');
+      expect(n.nodes, hasLength(2));
+      n.nodes[0].testNode<MigrationAnyNode>((n) {
+        expect(n.index, 0);
+        expect(n.offset, 22);
+        expect(n.captured, false);
+        expect(n.matcher, null);
+        expect(n.name, null);
+      });
+      n.nodes[1].testNode<MigrationAnyNode>((n) {
+        expect(n.index, 0);
+        expect(n.offset, 27);
+        expect(n.captured, false);
+        expect(n.matcher, null);
+        expect(n.name, 'flag');
+      });
+    });
+    nodes[6].testNode<MigrationWhenNode>((n) {
+      expect(n.start, 19);
+      expect(n.end, 19);
+      expect(
+        n.method,
+        "when(testClass1.call3(s: 's'))",
+      );
+      expect(n.then, 'thenAnswer');
+      expect(n.args, "((_) => Future.value(''))");
+      expect(n.nodes, isEmpty);
+    });
+    nodes[7].testNode<MigrationWhenNode>((n) {
+      expect(n.start, 20);
+      expect(n.end, 25);
+      expect(
+        n.method,
+        "when(testClass1.call3(s: argThat(equals('s'), named: 's')))",
+      );
+      expect(n.then, 'thenAnswer');
+      expect(n.args, "((_) => Future.value(''))");
+    });
+  });
+}
+
+extension TestExt<T> on T {
+  void testNode<N>(void Function(N n) block) => block(this as N);
 }

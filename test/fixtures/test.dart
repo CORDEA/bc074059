@@ -4,6 +4,10 @@ class TestClass1 {
   TestClass1(this.value);
 
   int call(int v) => 0 + v;
+
+  int call2(int v, {required bool flag}) => 0;
+
+  Future<String> call3({required String s}) async => s;
 }
 
 class TestClass2<T> {
